@@ -1,0 +1,4 @@
+int a, b;
+bool ind;
+read(a,b);
+ind = a ! b;
