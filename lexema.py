@@ -167,7 +167,7 @@ class Lexema:
 # lex.lex()
 
 # Таблиці: розбору, ідентифікаторів та констант
-print('-' * 30)
-print('tableOfSymb:{0}'.format(tableOfSymb))
-print('tableOfId:{0}'.format(tableOfId))
-print('tableOfConst:{0}'.format(tableOfConst))
+# print('-' * 30)
+# print('tableOfSymb:{0}'.format(tableOfSymb))
+# print('tableOfId:{0}'.format(tableOfId))
+# print('tableOfConst:{0}'.format(tableOfConst))

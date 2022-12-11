@@ -17,7 +17,6 @@ class Parser:
 
     def getSymb(self):
         if self.numRow > self.len_tableOfSymb:
-            print(1234567890)
             self.failParse('getSymb(): неочікуваний кінець програми', self.numRow)
         # таблиця розбору реалізована у формі словника (dictionary)
         # tableOfSymb[numRow]={numRow: (numLine, lexeme, token, indexOfVarOrConst)
@@ -26,22 +25,31 @@ class Parser:
 
     def failParse(self, str, tuple):
         if str == 'неочікуваний кінець програми':
-            (lexeme, token, numRow) = tuple
-            print(
+            if len(tuple) == 3:
+                (lexeme, token, numRow) = tuple
+                print(
                 'Parser ERROR: \n\t Неочікуваний кінець програми - в таблиці символів (розбору) немає запису з номером {1}. \n\t Очікувалось - {0}'.format(
                     (lexeme, token), numRow))
+            else:
+                (token, numRow) = tuple
+                print(
+                    'Parser ERROR: \n\t Неочікуваний кінець програми - в таблиці символів (розбору) немає запису з номером {0}. \n\t Останній запис - {1}'.format(
+                        numRow, token))
+
             exit(1001)
         if str == 'getSymb(): неочікуваний кінець програми':
             numRow = tuple
             print(
                 'Parser ERROR: \n\t Неочікуваний кінець програми - в таблиці символів (розбору) немає запису з номером {0}. \n\t Останній запис - {1}'.format(
-                    numRow, tableOfSymb[numRow - 1]))
+                    numRow, tableOfSymb[numRow-1]))
             exit(1002)
+
         elif str == 'невідповідність токенів':
             (numLine, lexeme, token, lex, tok) = tuple
             print('Parser ERROR: \n\t В рядку {0} неочікуваний елемент ({1},{2}). \n\t Очікувався - ({3},{4}).'.format(
                 numLine, lexeme, token, lex, tok))
             exit(1)
+
         elif str == 'невідповідність інструкцій':
             (numLine, lex, tok, expected) = tuple
             print(
@@ -59,48 +67,42 @@ class Parser:
                                                                                                                expected))
             exit(3)
 
-    def parseToken(self, lexeme, token, indent):
-        # доступ до поточного рядка таблиці розбору
+        elif str =='невідповідність в IdentList':
+            (numLine, lex, tok, expected) = tuple
+            print(
+                'Parser ERROR: \n\t В рядку {0} неочікуваний елемент ({1},{2}). \n\t Очікувався - {3}.'.format(numLine,
+                                                                                                               lex,
+                                                                                                               tok,
+                                                                                                               expected))
+            exit(4)
+        elif str == 'невідповідність у BoolExpr':
+            (numLine, lex, tok, expected) = tuple
+            print(
+                'Parser ERROR: \n\t В рядку {0} неочікуваний елемент ({1},{2}). \n\t Очікувався - {3}.'.format(numLine,
+                                                                                                               lex,
+                                                                                                               tok,
+                                                                                                               expected))
+            exit(5)
 
-
-        # якщо всі записи таблиці розбору прочитані,
-        # а парсер ще не знайшов якусь лексему
+    def parseLexToken(self, lexeme, token, indent):
         if self.numRow > self.len_tableOfSymb:
-            print(1234567890)
             self.failParse('неочікуваний кінець програми', (lexeme, token, self.numRow))
-
-        # прочитати з таблиці розбору
-        # номер рядка програми, лексему та її токен
         numLine, lex, tok = self.getSymb()
 
-        # тепер поточним буде наступний рядок таблиці розбору
         self.numRow += 1
 
-        # чи збігаються лексема та токен таблиці розбору з заданими
         if (lex, tok) == (lexeme, token):
             # вивести у консоль номер рядка програми та лексему і токен
             print(indent + 'parseToken: В рядку {0} токен {1}'.format(numLine, (lexeme, token)))
             return True
         else:
-            # згенерувати помилку та інформацію про те, що
-            # лексема та токен таблиці розбору (lex,tok) відрізняються від
-            # очікуваних (lexeme,token)
-            print(1234567890)
             self.failParse('невідповідність токенів', (numLine, lex, tok, lexeme, token))
             return False
 
-    def parseTokenIdent(self, token,  indent):
-        # доступ до поточного рядка таблиці розбору
-
-
-        # якщо всі записи таблиці розбору прочитані,
-        # а парсер ще не знайшов якусь лексему
+    def parseToken(self, token, indent):
         if self.numRow > self.len_tableOfSymb:
-            print(1234567890)
-            self.failParse('неочікуваний кінець програми3673', (token,  self.numRow))
+            self.failParse('неочікуваний кінець програми', (token,  self.numRow))
 
-        # прочитати з таблиці розбору
-        # номер рядка програми, лексему та її токен
         numLine, lex, tok = self.getSymb()
 
         # тепер поточним буде наступний рядок таблиці розбору
@@ -112,25 +114,16 @@ class Parser:
             print(indent + 'parseToken: В рядку {0} токен {1}'.format(numLine,  token))
             return True
         else:
-            # згенерувати помилку та інформацію про те, що
-            # лексема та токен таблиці розбору (lex,tok) відрізняються від
-            # очікуваних (lexeme,token)
             self.numRow -= 1
             return False
 
     def parseProgram(self):
         try:
-
-            # перевірити синтаксичну коректність списку інструкцій StatementList
-            # parseStatementList()
             self.parseDeclarList()
             self.parseStatemetList()
-
-            # повідомити про синтаксичну коректність програми
             print('Parser: Синтаксичний аналіз завершився успішно')
             return True
         except SystemExit as e:
-            # Повідомити про факт виявлення помилки
             print('Parser: Аварійне завершення програми з кодом {0}'.format(e))
 
     def parseDeclarList(self):
@@ -141,22 +134,26 @@ class Parser:
         return True
 
     def parseDeclaration(self, numTabs):
-        # взяти поточну лексему
         if self.numRow >= self.len_tableOfSymb:
             return False
+        if self.parseType(numTabs):
+            self.parseIdentList(numTabs)
+            self.parseLexToken(";", "punct", '\t' * numTabs)
 
-        numLine, lex, token = self.getSymb()
-        if lex in ['int', 'real', 'bool'] and token == "keyword":
-            print("\t"*numTabs+"parseDeclaration():")
-            numTabs += 1
-            self.parseType(numTabs)
-            if not self.parseIdentList(numTabs):
-                print(1234567890)
-                self.failParse("Parser Error: \n\t In line {numLine} expected a list of identifiers in an declaration" ,numLine )
-            self.parseToken(";", "punct", '\t'*numTabs)
             return True
         else:
             return False
+        # numLine, lex, token = self.getSymb()
+        #
+        # if lex in ['int', 'real', 'bool'] and token == "keyword":
+        #     print("\t"*numTabs+"parseDeclaration():")
+        #     numTabs += 1
+        #     self.parseType(numTabs)
+        #     self.parseIdentList(numTabs)
+        #     self.parseLexToken(";", "punct", '\t' * numTabs)
+        #     return True
+        # else:
+        #     return False
 
     def parseType(self, numTabs):
         print("\t"*numTabs +"parseType():")
@@ -165,26 +162,29 @@ class Parser:
         if lex in ['int', 'real', 'bool'] and token == "keyword":
             self.numRow += 1
             print("\t"*numTabs+'в рядку {0} - {1}'.format(numLine, (lex, token)))
+            return True
         else:
-            print(1234567890)
-            self.failParse("strhrt", 34)
-        return True
+            return False
+        #     self.failParse("невідповідність в Type", (numLine, lex, token, 'int | real | bool'))
+        # return True
 
     def parseIdentList(self, numTabs):
         print("\t"*numTabs+"parseIdentList():")
         numTabs += 1
-        if not self.parseTokenIdent("ident",'\t'*numTabs):
+        if not self.parseToken("ident", '\t' * numTabs):
+            numLine, lex, token = self.getSymb()
+            self.failParse('невідповідність в IdentList', (numLine, lex, token, 'ident'))
             return False
-        # numLine, lex, token = self.getSymb()
-        # print(self.getSymb()[1])
         while self.getSymb()[1] == "," and self.getSymb()[2] == "punct":
-            self.parseToken(",", "punct", "\t"*numTabs)
-            self.parseTokenIdent("ident", "\t"*numTabs)
+            self.parseLexToken(",", "punct", "\t" * numTabs)
+            if not self.parseToken("ident", '\t' * numTabs):
+                numLine, lex, token = self.getSymb()
+                self.failParse('невідповідність в IdentList', (numLine, lex, token, 'ident'))
+                return False
         return True
 
     def parseStatemetList(self, numTabs=0):
-        if self.numRow >= self.len_tableOfSymb:
-            return False
+
         print("\t"*numTabs+"parseStatementList():")
         numTabs += 1
         while self.parseStatement(numTabs):
@@ -198,9 +198,6 @@ class Parser:
         numTabs += 1
         # прочитаємо поточну лексему в таблиці розбору
         numLine, lex, token = self.getSymb()
-        # якщо токен - ідентифікатор
-        # обробити інструкцію присвоювання
-        # print(self.getSymb()[1])
 
         if token == 'ident':
             self.parseAssign(numTabs)
@@ -212,7 +209,6 @@ class Parser:
             self.parseWrite(numTabs)
             return True
         elif (lex, token) == ('for', 'keyword'):
-
             self.parseFor(numTabs)
             return True
         # якщо лексема - ключове слово 'if'
@@ -221,35 +217,30 @@ class Parser:
             self.parseIf(numTabs)
             return True
         elif token == 'mark':
-            self.parseTokenIdent("mark", "\t"*numTabs)
+            self.parseToken("mark", "\t" * numTabs)
             return True
-
-
-            # тут - ознака того, що всі інструкції були коректно
-        # розібрані і була знайдена остання лексема програми.
-        # тому parseStatement() має завершити роботу
+        elif lex == 'end' and numTabs>3:
+            return False
+        else:
+            self.failParse('невідповідність інструкцій', (numLine, lex, token, 'ident, read, write, for, if or mark'))
 
     def parseAssign(self, numTabs):
         print("\t"*numTabs+"parseAssign():")
         numTabs += 1
-        self.parseTokenIdent("ident", "\t"*numTabs)
-        if self.parseToken("=", "assign_op", "\t"*numTabs):
-            self.parseExpression(numTabs)
-            self.parseToken(";", "punct", "\t"*numTabs)
-            return True
-        else:
-            print(1234567890)
-            self.failParse("retert", 324)
+        self.parseToken("ident", "\t" * numTabs)
+        self.parseLexToken("=", "assign_op", "\t" * numTabs)
+        self.parseExpression(numTabs)
+        self.parseLexToken(";", "punct", "\t" * numTabs)
 
     def parseArithmExpression(self, numTabs):
         print("\t"*numTabs+"parseArithExpression():")
         numTabs += 1
-        self.parseTokenIdent( "add_op", "\t" * numTabs)
+        self.parseToken("add_op", "\t" * numTabs)
         # self.parseTokenIdent("add_op", "\t")
 
         if not self.parseTerm(numTabs):
             return False
-        while self.parseTokenIdent("add_op", "\t"*numTabs) and self.parseTerm(numTabs):
+        while self.parseToken("add_op", "\t" * numTabs) and self.parseTerm(numTabs):
             pass
         return True
 
@@ -258,9 +249,8 @@ class Parser:
         numTabs +=1
         if not self.parseFactor(numTabs):
             return False
-        # numLine, lex, token = self.getSymb()
 
-        while (self.parseTokenIdent("mult_op", "\t"*numTabs) or self.parseTokenIdent("pow_op", "\t"*numTabs)) and self.parseFactor(numTabs):
+        while (self.parseToken("mult_op", "\t" * numTabs) or self.parseToken("pow_op", "\t" * numTabs)) and self.parseFactor(numTabs):
             pass
         return True
 
@@ -275,10 +265,10 @@ class Parser:
             self.numRow += 1
             print("\t"*numTabs+ 'в рядку {0} - {1}'.format(numLine, (lex, token)))
             self.parseExpression(numTabs)
-            self.parseToken(")", "brackets_op", "\t"*numTabs)
+            self.parseLexToken(")", "brackets_op", "\t" * numTabs)
         else:
-            print(1234567890)
-            self.failParse("363", 2463)
+
+            self.failParse("невідповідність у Expression.Factor",(numLine, lex, token, 'int | real | boolval | ident | ('))
         return True
 
     def parseExpression(self, numTabs):
@@ -289,63 +279,46 @@ class Parser:
             return True
         self.numRow = count
         if self.parseArithmExpression(numTabs):
-
             return True
-        else:
-            print(1234567890)
-            self.failParse("2435", 4325)
 
     def parseIf(self, numTabs):
         print("\t"*numTabs+"parseIf():")
         numTabs += 1
-        if self.parseToken("if", "keyword", "\t"*numTabs):
+        if self.parseLexToken("if", "keyword", "\t" * numTabs):
             self.parseBoolExpression(numTabs)
-            self.parseToken("goto", "keyword", "\t"*numTabs)
-            self.parseTokenIdent("ident", "\t"*numTabs)
-            self.parseToken(";", "punct", "\t" * numTabs)
+            self.parseLexToken("goto", "keyword", "\t" * numTabs)
+            self.parseToken("ident", "\t" * numTabs)
+            self.parseLexToken(";", "punct", "\t" * numTabs)
             return True
         return False
 
     def parseFor(self, numTabs):
         print("\t"*numTabs+"parseFor():")
         numTabs += 1
-        self.parseToken("for", "keyword", "\t"*numTabs)
-        self.parseTokenIdent("ident" , "\t"*numTabs)
-        self.parseToken("=", "assign_op", "\t"*numTabs)
+        self.parseLexToken("for", "keyword", "\t" * numTabs)
+        self.parseToken("ident", "\t" * numTabs)
+        self.parseLexToken("=", "assign_op", "\t" * numTabs)
         self.parseArithmExpression(numTabs)
-        self.parseToken("to", "keyword", "\t"*numTabs)
+        self.parseLexToken("to", "keyword", "\t" * numTabs)
         self.parseArithmExpression(numTabs)
-        self.parseToken("do", "keyword", "\t" * numTabs)
+        self.parseLexToken("do", "keyword", "\t" * numTabs)
         self.parseStatemetList(numTabs)
-        self.parseToken("end", "keyword", "\t" * numTabs)
-        self.parseToken(";", "punct", "\t" * numTabs)
+        self.parseLexToken("end", "keyword", "\t" * numTabs)
+        self.parseLexToken(";", "punct", "\t" * numTabs)
         return True
-
-    # def parseBoolExpression(self):
-    #     print("parseBoolExpression():")
-    #     if self.parseTokenIdent("boolval", "\t"):
-    #         while self.parseTokenIdent("rel_op", "\t") and self.parseExpression():
-    #             pass
-    #         return True
-    #     elif self.parseArithmExpression():
-    #
-    #         return self.parseTokenIdent("rel_op", "\t") and self.parseExpression()
-    #     else:
-    #
-    #         self.failParse("5464", 35)
 
     def parseBoolExpression(self, numTabs):
         print('\t'*numTabs  + 'parseBooleanExpression():')
         numTabs += 1
         numLine, lex, tok = self.getSymb()
         if lex in ('true', 'false') and tok == 'boolval':
-            self.parseToken(lex, 'boolval', "\t"*numTabs)
+            self.parseLexToken(lex, 'boolval', "\t" * numTabs)
             numLine, lex, tok = self.getSymb()
             if tok == 'rel_op':
-                self.parseToken(lex, 'rel_op', "\t"*numTabs)
+                self.parseLexToken(lex, 'rel_op', "\t" * numTabs)
                 numLine, lex, tok = self.getSymb()
                 if lex in ('true', 'false') and tok == 'boolval':
-                    self.parseToken(lex, 'boolval', "\t"*numTabs)
+                    self.parseLexToken(lex, 'boolval', "\t" * numTabs)
                     return True
                 else:
                     return self.parseArithmExpression(numTabs)
@@ -355,10 +328,10 @@ class Parser:
         elif self.parseArithmExpression(numTabs):
             numLine, lex, tok = self.getSymb()
             if tok == 'rel_op':
-                self.parseToken(lex, 'rel_op', "\t"*numTabs)
+                self.parseLexToken(lex, 'rel_op', "\t" * numTabs)
                 numLine, lex, tok = self.getSymb()
                 if lex in ('true', 'false') and tok == 'boolval':
-                    self.parseToken(lex, 'boolval',"\t"*numTabs)
+                    self.parseLexToken(lex, 'boolval', "\t" * numTabs)
                     return True
                 else:
                     return self.parseArithmExpression(numTabs)
@@ -367,31 +340,27 @@ class Parser:
                 return False
         else:
             numLine, lex, tok = self.getSymb()
-            print(1234567890)
             self.failParse('невідповідність у BoolExpr', (numLine, lex, tok, 'arythExp or boolConst'))
 
     def parseRead(self, numTabs):
         print("\t"*numTabs+"parseRead():")
         numTabs += 1
-        self.parseToken("read", "keyword", "\t"*numTabs)
-        self.parseToken("(", "brackets_op", "\t")
-        if not self.parseIdentList(numTabs):
-            print(1234567890)
-            self.failParse("6356", 54)
-        self.parseToken(")", "brackets_op", "\t"*numTabs)
-        self.parseToken(";", "punct", "\t"*numTabs)
+        self.parseLexToken("read", "keyword", "\t" * numTabs)
+        self.parseLexToken("(", "brackets_op", "\t")
+        self.parseIdentList(numTabs)
+        self.parseLexToken(")", "brackets_op", "\t" * numTabs)
+        self.parseLexToken(";", "punct", "\t" * numTabs)
         return True
 
     def parseWrite(self, numTabs):
         print("\t"*numTabs+"parseWrite():")
         numTabs += 1
-        self.parseToken("write", "keyword", "\t"*numTabs)
-        self.parseToken("(", "brackets_op", "\t"*numTabs)
-        if not self.parseIdentList(numTabs):
-            print(1234567890)
-            self.failParse("6356", 54)
-        self.parseToken(")", "brackets_op", "\t"*numTabs)
-        self.parseToken(";", "punct", "\t"*numTabs)
+        self.parseLexToken("write", "keyword", "\t" * numTabs)
+        self.parseLexToken("(", "brackets_op", "\t" * numTabs)
+        self.parseIdentList(numTabs)
+
+        self.parseLexToken(")", "brackets_op", "\t" * numTabs)
+        self.parseLexToken(";", "punct", "\t" * numTabs)
         return True
 
 
