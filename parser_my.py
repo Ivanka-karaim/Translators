@@ -364,7 +364,7 @@ class Parser:
         return True
 
 
-parser = Parser("test3.my_lang")
+parser = Parser("test.my_lang")
 parser.parseProgram()
 
 
