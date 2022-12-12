@@ -307,26 +307,28 @@ class Parser:
         print('\t'*numTabs  + 'parseBooleanPart():')
 
         numTabs += 1
+
         numLine, lex, tok = self.getSymb()
         if lex in ('true', 'false') and tok == 'boolval' :
+
             self.parseLexToken(lex, 'boolval', "\t" * numTabs)
+            #
             # numLine, lex, tok = self.getSymb()
             # if tok == 'rel_op':
             #     self.parseLexToken(lex, 'rel_op', "\t" * numTabs)
-                # numLine, lex, tok = self.getSymb()
-                #
-                # if lex in ('true', 'false') and tok == 'boolval':
-                #
-                #     self.parseLexToken(lex, 'boolval', "\t" * numTabs)
-                #     return True
-                # else:
-                #     return self.parseToken('ident', '\t'*numTabs)
+            #     numLine, lex, tok = self.getSymb()
+            #
+            #     if lex in ('true', 'false') and tok == 'boolval':
+            #
+            #         self.parseLexToken(lex, 'boolval', "\t" * numTabs)
+            #         return True
+            #     else:
+            #         return self.parseToken('ident', '\t'*numTabs)
                 # else:
                 #     return self.parseArithmExpression(numTabs)
             # else:
             #     return True
         # elif self.parseToken('ident', '\t'*numTabs) and self.parseToken('rel_op', '\t'*numTabs):
-        #     print(35754)
         #     self.numRow -= 1
         #     return True
 
@@ -340,9 +342,10 @@ class Parser:
                     self.parseLexToken(lex, 'boolval', "\t" * numTabs)
                     return True
                 else:
-                    return  self.parseArithmExpression(numTabs)
+                    # return self.parseBoolPartBrackets(numTabs)
+                    return self.parseArithmExpression(numTabs)
             else:
-                print('\t'*numTabs  + "Not a BooleanExpression--------------------")
+                print('\t'*numTabs + "Not a BooleanExpression--------------------")
                 return False
 
         else:
