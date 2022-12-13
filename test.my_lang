@@ -27,7 +27,7 @@ sum=0;
 mark2:
 for i = 0 to count do
     sum = sum + i/2.5;
-    if equal == (sum >= total)  goto mark3;
+    if  (sum >= total) == equal goto mark3;
 
 end;
 equal = sum < total/2;
