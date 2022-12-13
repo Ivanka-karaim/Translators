@@ -327,13 +327,12 @@ class Parser:
         elif self.parseArithmExpression(numTabs):
             numLine, lex, tok = self.getSymb()
             if tok == 'rel_op':
-                self.parseLexToken(lex, 'rel_op', "\t" * numTabs)
+                self.numRow += 1
                 numLine, lex, tok = self.getSymb()
                 if lex in ('true', 'false') and tok == 'boolval':
                     # self.failParse('невідповідність у BoolExpr', (numLine, lex, tok, "ArithmExpr"))
                     self.numRow -= 2
                     numLine, lex, tok = self.getSymb()
-                    print(lex)
                     if tok == 'ident':
                         self.numRow += 2
                         numLine, lex, tok = self.getSymb()
@@ -343,11 +342,14 @@ class Parser:
                         self.failParse('невідповідність у BoolExpr', (numLine, lex, tok, "ArithmExpr"))
 
                 else:
-                    # return self.parseBoolPartBrackets(numTabs)
+
                     numLine, lex, tok = self.getSymb()
                     if lex == '(':
                         self.numRow -= 1
                         return True
+                    self.numRow -= 1
+                    numLine, lex, tok = self.getSymb()
+                    self.parseLexToken(lex, 'rel_op', "\t" * numTabs)
                     return self.parseArithmExpression(numTabs)
             else:
                 print('\t'*numTabs + "Not a BooleanExpression--------------------")
@@ -363,8 +365,8 @@ class Parser:
         ind = False
         numLine, lex, tok = self.getSymb()
         if lex == '(':
+            self.parseLexToken("(", "brackets_op", "\t" * numTabs)
             ind = True
-            self.numRow += 1
         id = self.parseBoolPart(numTabs)
         if ind:
             self.parseLexToken(")", "brackets_op", "\t" * numTabs)
@@ -400,7 +402,7 @@ class Parser:
         return True
 
 
-parser = Parser("test3.my_lang")
+parser = Parser("test.my_lang")
 parser.parseProgram()
 
 
