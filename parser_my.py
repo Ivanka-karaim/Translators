@@ -303,35 +303,27 @@ class Parser:
         return True
 
     def parseBoolPart(self, numTabs):
-
         print('\t'*numTabs  + 'parseBooleanPart():')
-
         numTabs += 1
-
         numLine, lex, tok = self.getSymb()
         if lex in ('true', 'false') and tok == 'boolval' :
-
             self.parseLexToken(lex, 'boolval', "\t" * numTabs)
             #
-            # numLine, lex, tok = self.getSymb()
-            # if tok == 'rel_op':
-            #     self.parseLexToken(lex, 'rel_op', "\t" * numTabs)
-            #     numLine, lex, tok = self.getSymb()
-            #
-            #     if lex in ('true', 'false') and tok == 'boolval':
-            #
-            #         self.parseLexToken(lex, 'boolval', "\t" * numTabs)
-            #         return True
-            #     else:
-            #         return self.parseToken('ident', '\t'*numTabs)
+            numLine, lex, tok = self.getSymb()
+            if tok == 'rel_op':
+                self.parseLexToken(lex, 'rel_op', "\t" * numTabs)
+                numLine, lex, tok = self.getSymb()
+
+                if lex in ('true', 'false') and tok == 'boolval':
+
+                    self.parseLexToken(lex, 'boolval', "\t" * numTabs)
+                    return True
+                else:
+                    return self.parseToken('ident', '\t'*numTabs)
                 # else:
                 #     return self.parseArithmExpression(numTabs)
-            # else:
-            #     return True
-        # elif self.parseToken('ident', '\t'*numTabs) and self.parseToken('rel_op', '\t'*numTabs):
-        #     self.numRow -= 1
-        #     return True
-
+            else:
+                return True
         elif self.parseArithmExpression(numTabs):
             numLine, lex, tok = self.getSymb()
             if tok == 'rel_op':
@@ -341,12 +333,15 @@ class Parser:
                     # self.failParse('невідповідність у BoolExpr', (numLine, lex, tok, "ArithmExpr"))
                     self.parseLexToken(lex, 'boolval', "\t" * numTabs)
                     return True
+
                 else:
                     # return self.parseBoolPartBrackets(numTabs)
                     return self.parseArithmExpression(numTabs)
             else:
                 print('\t'*numTabs + "Not a BooleanExpression--------------------")
                 return False
+        elif self.parseToken('ident', '\t'*numTabs):
+            return True
 
         else:
             numLine, lex, tok = self.getSymb()
@@ -366,10 +361,11 @@ class Parser:
     def parseBoolExpression(self, numTabs):
         print('\t'*numTabs+'parseBoolExpression:')
         numTabs+=1
-        self.parseBoolPartBrackets(numTabs)
-        while self.parseToken('rel_op', "\t" * numTabs) and self.parseBoolPartBrackets(numTabs):
-            pass
-        return True
+        if self.parseBoolPartBrackets(numTabs):
+            while self.parseToken('rel_op', "\t" * numTabs) and self.parseBoolPartBrackets(numTabs):
+                pass
+            return True
+        return False
 
     def parseRead(self, numTabs):
         print("\t"*numTabs+"parseRead():")
