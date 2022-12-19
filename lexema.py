@@ -34,6 +34,7 @@ tableIdentFloatInt = {2: 'ident', 4: 'int', 7: 'real', 15:'mark'}
 tableOfId={}   # Таблиця ідентифікаторів
 tableOfConst={} # Таблиць констант
 tableOfSymb={}  # Таблиця символів програми (таблиця розбору)
+tableOfMark = []
 
 
 class Lexema:
@@ -78,14 +79,17 @@ class Lexema:
                 index = self.indexIdConst(token)
                 print('{0:<3d} {1:<10s} {2:<10s} {3:<2d} '.format(self.numLine, self.lexeme, token, index))
                 tableOfSymb[len(tableOfSymb) + 1] = (self.numLine, self.lexeme, token, index)
+                if self.state == 15:
+                    tableOfMark.append(self.lexeme)
             else:  # якщо keyword
                 print('{0:<3d} {1:<10s} {2:<10s} '.format(self.numLine, self.lexeme, token))
                 tableOfSymb[len(tableOfSymb) + 1] = (self.numLine, self.lexeme, token, '')
             self.lexeme = ''
             self.numChar = self.putCharBack()  # зірочка
             self.state = initState
-        if self.state in (9, 11, 13):
-            self.lexeme += self.char
+        if self.state in (9, 11, 12):
+            if self.state != 13:
+                self.lexeme += self.char
             token = self.getToken()
             print('{0:<3d} {1:<10s} {2:<10s} '.format(self.numLine, self.lexeme, token))
             tableOfSymb[len(tableOfSymb) + 1] = (self.numLine, self.lexeme, token, '')
@@ -93,6 +97,8 @@ class Lexema:
             self.state = initState
         if self.state in Ferror:  # (101,102,103):  # ERROR
             self.fail()
+
+
 
     def getToken(self):
         try:
@@ -128,6 +134,7 @@ class Lexema:
 
     def lex(self):
         try:
+            print(self.lenCode)
             while self.numChar < self.lenCode:
                 self.char = self.nextChar()  # прочитати наступний символ
                 self.state = self.nextState(self.classOfChar())  # обчислити наступний стан
@@ -136,6 +143,7 @@ class Lexema:
                 # if state in Ferror:	    # якщо це стан обробки помилки
                 # break					#      то припинити подальшу обробку
                 elif self.state == initState:
+                    print("34535")
                     self.lexeme = ''  # якщо стан НЕ заключний, а стартовий - нова лексема
                 else:
                     self.lexeme += self.char  # якщо стан НЕ закл. і не стартовий - додати символ до лексеми
@@ -163,11 +171,12 @@ class Lexema:
 
 
 # запуск лексичного аналізатора
-# lex = Lexema("test3.my_lang")
+# lex = Lexema("test.my_lang")
 # lex.lex()
-
+#
 # Таблиці: розбору, ідентифікаторів та констант
 # print('-' * 30)
 # print('tableOfSymb:{0}'.format(tableOfSymb))
 # print('tableOfId:{0}'.format(tableOfId))
 # print('tableOfConst:{0}'.format(tableOfConst))
+# print('tableOfMark:{0}'.format(tableOfMark))
