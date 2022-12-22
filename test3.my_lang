@@ -1,5 +1,7 @@
-read(a,);
-
-
-
-
+int a,b;
+a = 5.2;
+b = 7;
+z = 2;
+v1 = (a+b) > z;
+read(a,b);
+write(a,b);

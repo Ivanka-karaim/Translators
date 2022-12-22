@@ -1,3 +1,5 @@
+FSuccess = (True, 'Lexer')
+
 # state-transition function
 stf = {(0, 'Letter'): 1, (1, 'Letter'): 1, (1, 'Digit'): 1, (1, 'other'): 2,
        (0, 'Digit'): 3, (3, 'Digit'): 3, (3, 'other'): 4, (3, '.'): 5, (5, 'Digit'): 6, (5, 'other'): 102,
@@ -9,7 +11,7 @@ stf = {(0, 'Letter'): 1, (1, 'Letter'): 1, (1, 'Digit'): 1, (1, 'other'): 2,
        (0, '!'): 10, (10, '='): 12, (10, 'other'): 103,
        (0, '>'): 12, (0, '='): 12, (0, '<'): 12,
        (12, '='): 11, (12, 'other'): 13,
-       (1, ':'):14, (14, 'other'): 15,
+       (1, ':'): 14, (14, 'other'): 15,
        (0, 'other'): 101
        }
 
@@ -29,11 +31,11 @@ tableOfLanguageTokens = {'end': 'keyword', 'int': 'keyword', 'real': 'keyword', 
                          '<': 'rel_op', '>': 'rel_op', '<=': 'rel_op', '>=': 'rel_op', '==': 'rel_op', '!=': 'rel_op'}
 
 # Решту токенiв визначаємо не за лексемою, а за заключним станом
-tableIdentFloatInt = {2: 'ident', 4: 'int', 7: 'real', 15:'mark'}
+tableIdentFloatInt = {2: 'ident', 4: 'int', 7: 'real', 15: 'mark'}
 
-tableOfId={}   # Таблиця ідентифікаторів
-tableOfConst={} # Таблиць констант
-tableOfSymb={}  # Таблиця символів програми (таблиця розбору)
+tableOfId = {}  # Таблиця ідентифікаторів
+tableOfConst = {}  # Таблиць констант
+tableOfSymb = {}  # Таблиця символів програми (таблиця розбору)
 tableOfMark = []
 
 
@@ -42,7 +44,6 @@ class Lexema:
         f = open(name_file, 'r')
         self.sourceCode = f.read()
         f.close()
-        self.FSucces = (True, 'Lexer')
         self.state = initState  # поточний стан
         self.lenCode = len(self.sourceCode) - 1  # номер останнього символа у файлі з кодом програми
         self.numLine = 1  # лексичний аналіз починаємо з першого рядка
@@ -98,8 +99,6 @@ class Lexema:
         if self.state in Ferror:  # (101,102,103):  # ERROR
             self.fail()
 
-
-
     def getToken(self):
         try:
             return tableOfLanguageTokens[self.lexeme]
@@ -109,16 +108,27 @@ class Lexema:
     def indexIdConst(self, token):
         indx = 0
         if token == 'ident':
-            indx = tableOfId.get(self.lexeme)
-            if indx is None:
+            indx1 = tableOfId.get(self.lexeme)
+            if indx1 is None:
                 indx = len(tableOfId) + 1
-                tableOfId[self.lexeme] = indx
-        if  self.state == 4 or self.state == 7:
-            indx = tableOfConst.get(self.lexeme)
-            if indx is None:
+                tableOfId[self.lexeme] = (indx,'type_undef','val_undef')
+        if self.state == 4 or self.state == 7:
+            indx1 = tableOfConst.get(self.lexeme)
+            if indx1 is None:
+
                 indx = len(tableOfConst) + 1
-                tableOfConst[self.lexeme] = indx
+                if self.state == 7:
+                    val = float(self.lexeme)
+                elif self.state == 4:
+                    val = int(self.lexeme)
+                tableOfConst[self.lexeme] = (indx, token, val)
+        if not (indx1 is None):
+            if len(indx1) == 2:
+                indx, _ = indx1
+            else:
+                indx, _, _ = indx1
         return indx
+
 
     def fail(self):
         print(self.numLine)
@@ -133,6 +143,7 @@ class Lexema:
             exit(103)
 
     def lex(self):
+        global FSuccess
         try:
             print(self.lenCode)
             while self.numChar < self.lenCode:
@@ -143,14 +154,14 @@ class Lexema:
                 # if state in Ferror:	    # якщо це стан обробки помилки
                 # break					#      то припинити подальшу обробку
                 elif self.state == initState:
-                    print("34535")
+                    # print("34535")
                     self.lexeme = ''  # якщо стан НЕ заключний, а стартовий - нова лексема
                 else:
                     self.lexeme += self.char  # якщо стан НЕ закл. і не стартовий - додати символ до лексеми
             print('Lexer: Лексичний аналіз завершено успішно')
         except SystemExit as e:
             # Встановити ознаку неуспішності
-            self.FSucces = (False, 'Lexer')
+            FSuccess = (False, 'Lexer')
             # Повідомити про факт виявлення помилки
             print('Lexer: Аварійне завершення програми з кодом {0}'.format(e))
 
@@ -169,6 +180,68 @@ class Lexema:
             res = 'символ не належить алфавiту'
         return res
 
+    def getSourceCode(self):
+        return self.sourceCode
+
+
+def tableToPrint(Tbl):
+    if Tbl == "Symb":
+        tableOfSymbToPrint()
+    elif Tbl == "Id":
+        tableOfIdToPrint()
+    elif Tbl == "Const":
+        tableOfConstToPrint()
+    elif Tbl == "Label":
+        tableOfLabelToPrint()
+    else:
+        tableOfSymbToPrint()
+        tableOfIdToPrint()
+        tableOfConstToPrint()
+        tableOfLabelToPrint()
+    return True
+
+
+def tableOfSymbToPrint():
+    print("\n Таблиця символів")
+    s1 = '{0:<10s} {1:<10s} {2:<10s} {3:<10s} {4:<5s} '
+    s2 = '{0:<10d} {1:<10d} {2:<10s} {3:<10s} {4:<5s} '
+    print(s1.format("numRec", "numLine", "lexeme", "token", "index"))
+    for numRec in tableOfSymb:  # range(1,lns+1):
+        numLine, lexeme, token, index = tableOfSymb[numRec]
+        print(s2.format(numRec, numLine, lexeme, token, str(index)))
+
+
+def tableOfIdToPrint():
+    print("\n Таблиця ідентифікаторів")
+    s1 = '{0:<10s} {1:<15s} {2:<15s} {3:<10s} '
+    print(s1.format("Ident", "Type", "Value", "Index"))
+    s2 = '{0:<10s} {2:<15s} {3:<15s} {1:<10d} '
+    for id in tableOfId:
+        index, type, val = tableOfId[id]
+        print(s2.format(id, index, type, str(val)))
+
+
+def tableOfConstToPrint():
+    print("\n Таблиця констант")
+    s1 = '{0:<10s} {1:<10s} {2:<10s} {3:<10s} '
+    print(s1.format("Const", "Type", "Value", "Index"))
+    s2 = '{0:<10s} {2:<10s} {3:<10} {1:<10d} '
+    for cnst in tableOfConst:
+        index, type, val = tableOfConst[cnst]
+        print(s2.format(str(cnst), index, type, val))
+
+
+def tableOfLabelToPrint():
+    if len(tableOfMark) == 0:
+        print("\n Таблиця міток - порожня")
+    else:
+        s1 = '{0:<10s} {1:<10s} '
+        print("\n Таблиця міток")
+        print(s1.format("Label", "Value"))
+        s2 = '{0:<10s} {1:<10d} '
+        for lbl in tableOfMark:
+            val = tableOfMark[lbl]
+            print(s2.format(lbl, val))
 
 # запуск лексичного аналізатора
 # lex = Lexema("test.my_lang")
