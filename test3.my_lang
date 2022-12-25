@@ -1,7 +1,10 @@
-int a,b;
-a = 5.2;
-b = 7;
-z = 2;
-v1 = (a+b) > z;
+bool x, y;
+int a, b, i;
+
 read(a,b);
-write(a,b);
+b = 0;
+for i = 1 to a do
+    b = b + 1;
+    write(b);
+end;
+write(b);

@@ -36,7 +36,7 @@ tableIdentFloatInt = {2: 'ident', 4: 'int', 7: 'real', 15: 'mark'}
 tableOfId = {}  # Таблиця ідентифікаторів
 tableOfConst = {}  # Таблиць констант
 tableOfSymb = {}  # Таблиця символів програми (таблиця розбору)
-tableOfMark = []
+tableOfLabel = {}
 
 
 class Lexema:
@@ -76,13 +76,15 @@ class Lexema:
             self.state = initState
         if self.state in (2, 4, 7, 13, 15):  # keyword, ident, float, int
             token = self.getToken()
+
             if token != 'keyword' and token != 'assign_op' and token != 'rel_op':
                 index = self.indexIdConst(token)
                 print('{0:<3d} {1:<10s} {2:<10s} {3:<2d} '.format(self.numLine, self.lexeme, token, index))
                 tableOfSymb[len(tableOfSymb) + 1] = (self.numLine, self.lexeme, token, index)
-                if self.state == 15:
-                    tableOfMark.append(self.lexeme)
+                # if self.state == 15:
+                #     tableOfMark.append(self.lexeme)
             else:  # якщо keyword
+
                 print('{0:<3d} {1:<10s} {2:<10s} '.format(self.numLine, self.lexeme, token))
                 tableOfSymb[len(tableOfSymb) + 1] = (self.numLine, self.lexeme, token, '')
             self.lexeme = ''
@@ -96,6 +98,7 @@ class Lexema:
             tableOfSymb[len(tableOfSymb) + 1] = (self.numLine, self.lexeme, token, '')
             self.lexeme = ''
             self.state = initState
+
         if self.state in Ferror:  # (101,102,103):  # ERROR
             self.fail()
 
@@ -107,12 +110,13 @@ class Lexema:
 
     def indexIdConst(self, token):
         indx = 0
+        indx1 =None
         if token == 'ident':
             indx1 = tableOfId.get(self.lexeme)
             if indx1 is None:
                 indx = len(tableOfId) + 1
                 tableOfId[self.lexeme] = (indx,'type_undef','val_undef')
-        if self.state == 4 or self.state == 7:
+        if self.state == 4 or self.state == 7 or token == 'boolval':
             indx1 = tableOfConst.get(self.lexeme)
             if indx1 is None:
 
@@ -121,6 +125,8 @@ class Lexema:
                     val = float(self.lexeme)
                 elif self.state == 4:
                     val = int(self.lexeme)
+                else:
+                    val = self.lexeme
                 tableOfConst[self.lexeme] = (indx, token, val)
         if not (indx1 is None):
             if len(indx1) == 2:
@@ -232,24 +238,24 @@ def tableOfConstToPrint():
 
 
 def tableOfLabelToPrint():
-    if len(tableOfMark) == 0:
+    if len(tableOfLabel) == 0:
         print("\n Таблиця міток - порожня")
     else:
         s1 = '{0:<10s} {1:<10s} '
         print("\n Таблиця міток")
         print(s1.format("Label", "Value"))
         s2 = '{0:<10s} {1:<10d} '
-        for lbl in tableOfMark:
-            val = tableOfMark[lbl]
+        for lbl in tableOfLabel:
+            val = tableOfLabel[lbl]
             print(s2.format(lbl, val))
-
-# запуск лексичного аналізатора
+#
+# # запуск лексичного аналізатора
 # lex = Lexema("test.my_lang")
 # lex.lex()
 #
-# Таблиці: розбору, ідентифікаторів та констант
+# # Таблиці: розбору, ідентифікаторів та констант
 # print('-' * 30)
 # print('tableOfSymb:{0}'.format(tableOfSymb))
 # print('tableOfId:{0}'.format(tableOfId))
 # print('tableOfConst:{0}'.format(tableOfConst))
-# print('tableOfMark:{0}'.format(tableOfMark))
+# # print('tableOfMark:{0}'.format(tableOfMark))

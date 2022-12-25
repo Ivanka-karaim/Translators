@@ -1,6 +1,6 @@
 from lexema import Lexema
-from lexema import tableOfSymb, tableToPrint, FSuccess, tableOfId
-from lexema import tableOfMark
+from lexema import tableOfSymb, tableToPrint, FSuccess, tableOfId, tableOfConst
+from lexema import tableOfLabel
 
 postfixCode = []
 toView = False
@@ -8,9 +8,9 @@ class Parser:
     def __init__(self):
         self.numRow = 1
 
-        print('-' * 30)
+        # print('-' * 30)
         # print('tableOfSymb:{0}'.format(tableOfSymb))
-        print('-' * 30)
+        # print('-' * 30)
         # довжина таблиці символів програми
         # він же - номер останнього запису
         self.len_tableOfSymb = 0
@@ -28,12 +28,14 @@ class Parser:
         self.lex = Lexema(name)
         self.lex.lex()
         self.len_tableOfSymb = len(tableOfSymb)
+        # print(tableOfId)
 
         # чи був успішним лексичний розбір
         if (True, 'Lexer') == FSuccess:
             FSuccess = self.parseProgram()
             self.serv()
             return FSuccess
+
     def getSymb(self):
         if self.numRow > self.len_tableOfSymb:
             self.failParse('getSymb(): неочікуваний кінець програми', self.numRow)
@@ -99,7 +101,7 @@ class Parser:
         # з очiкуваними (lexeme,token)
         if (lex, tok) == (lexeme, token):
             # вивести у консоль номер рядка програми та лексему і токен
-            print(indent + 'parseToken: В рядку {0} токен {1}'.format(numLine, (lexeme, token)))
+            # print(indent + 'parseToken: В рядку {0} токен {1}'.format(numLine, (lexeme, token)))
             return True
         else:
             # згенерувати помилку та iнформацiю про те, що
@@ -174,7 +176,7 @@ class Parser:
         numLine, lex, tok = self.getSymb()
 
         if self.parseType(numTabs):
-            print(523)
+            # print(523)
             # перевіряє правильність запису ідентифікаторів
             self.parseIdentList(numTabs, lex)
             # перевіряє наявність ; в кінці оголошення
@@ -201,7 +203,7 @@ class Parser:
 
     def parseIdentList(self, numTabs, type):
         # print("\t" * numTabs + "parseIdentList():")
-        print(tableOfId)
+        # print(tableOfId)
         numTabs += 1
         # перевірка на наявність хоча б одного ідентифікатора
         numLine, lex, tok = self.getSymb()
@@ -293,7 +295,11 @@ class Parser:
             return True
         # якщо токен - mark
         elif token == 'mark':
-            self.parseToken("mark", "\t" * numTabs)
+            # print(525442)
+            tableOfLabel[lex.split(":")[0]] = len(postfixCode)
+            postfixCode.append((lex.split(":")[0], token))
+            self.numRow+=1
+            # self.parseToken("mark", "\t" * numTabs)
             return True
         # якщо лексема - ключове слово 'end'
         # i воно знаходиться в інструкції повторень
@@ -332,11 +338,18 @@ class Parser:
         # print("\t" * numTabs + "parseArithExpression():")
         numTabs += 1
         # може зустрічатись знак
-        self.parseToken("add_op", "\t" * numTabs)
+        # self.parseToken("add_op", "\t" * numTabs)
+        x = None
+        numLine, lex, tok = self.getSymb()
 
+        if lex == '-' and tok == 'add_op':
+            x = ("NEG", "neg")
+            self.numRow += 1
         # якщо не Term то це не арифметичний оператор
         if not self.parseTerm(numTabs):
             return False
+        if x is not None:
+            postfixCode.append(x)
         # поки зустрічається add_op Term,
         # доти розглядається арифметичний оператор
         # while self.parseToken("add_op", "\t" * numTabs) and self.parseTerm(numTabs):
@@ -385,6 +398,17 @@ class Parser:
                 # lex - бінарний оператор  '*' чи '/'
                 # додається після своїх операндів
                 if toView: self.configToPrint(lex, self.numRow)
+            elif tok in ('pow_op'):
+                self.numRow += 1
+                self.parseFactor(numTabs)
+                i = 1
+                while self.parseToken('pow_op', '\t'*numTabs) and self.parseFactor(numTabs):
+                    i += 1
+                for j in range(i):
+                    postfixCode.append(("^", "pow_op"))
+
+
+
             else:
                 F = False
         # while (self.parseToken("mult_op", "\t" * numTabs) or self.parseToken("pow_op",
@@ -445,18 +469,41 @@ class Parser:
         if self.parseLexToken("if", "keyword", "\t" * numTabs):
             self.parseBoolExpression(numTabs)
             # перевірка ключового слова goto
+            # m = self.createLabel()
+            # postfixCode.append(m)
+            # postfixCode.append(("JF", "jf"))
             self.parseLexToken("goto", "keyword", "\t" * numTabs)
+
+            self.createGotoLabel()
             self.parseToken('ident', '\t' * numTabs)
+            # self.setValueToLabel(m)
             return True
-            # numLine, lex, tok = self.getSymb()
-            # # перевірка чи існує така марка в таблиці марок
-            # if lex+':' not in tableOfMark:
-            #     self.failParse('неіснуюча марка', (numLine, lex, tok, tableOfMark))
-            # else:
-            #     self.numRow+=1
-            #     return True
+
         return False
 
+    def createGotoLabel(self):
+        numLine, lex, tok = self.getSymb()
+        if tok == 'ident':
+            # tableOfLabel[lex] = 'val_undef'
+            print(tableOfId)
+            if lex in tableOfId:
+                tableOfId.pop(lex)
+            tableOfSymb[self.numRow] = (numLine, lex, "mark", '')
+        self.numRow += 1
+        postfixCode.append((lex, "mark"))
+        postfixCode.append(("JF", "jf"))
+        return lex, "mark"
+
+    def createLabel(self):
+        num = len(tableOfLabel)+1
+        lex = "m"+str(num)
+        if lex not in tableOfLabel:
+            tableOfLabel[lex] = 'val_undef'
+        return lex, "mark"
+
+    def setValueToLabel(self, lbl):
+        lex, _tok = lbl
+        tableOfLabel[lex] = len(postfixCode)
 
 
     def parseFor(self, numTabs):
@@ -465,22 +512,144 @@ class Parser:
         # перевірка ключого слова for
         self.parseLexToken("for", "keyword", "\t" * numTabs)
         # перевірка наявності ідентифікатора
-        self.parseToken("ident", "\t" * numTabs)
+        numLine, lex, tok = self.getSymb()
+        if self.parseToken("ident", "\t" * numTabs):
+            postfixCode.append((lex, tok))
+
         # перевірка оператора присвоювання
         self.parseLexToken("=", "assign_op", "\t" * numTabs)
         # виклик фунції арифметичний вираз
         self.parseArithmExpression(numTabs)
-        # перевірка ключого слова to
+        postfixCode.append(("=", "assign_op"))
+
+        tableOfId["r1"] = (len(tableOfId)+1, "int", 0)
+        if "0" not in tableOfConst:
+            tableOfConst["0"] = (len(tableOfId)+1, "int", 0)
+        postfixCode.append(("r1", "ident"))
+        postfixCode.append(("1", "int"))
+        postfixCode.append(("=", "assign_op"))
+
+        m1 = self.createLabel()
+        postfixCode.append((m1[0], m1[1]))
+        postfixCode.append((":", "punct"))
+        tableOfId["r2"] = (len(tableOfId) + 1, "int", 0)
+        self.setValueToLabel(m1)
+        postfixCode.append(("r2", "ident"))
+        tableOfId["value_step"] = (len(tableOfId)+1, "int", 1)
+        postfixCode.append(("value_step", "ident"))
+
         self.parseLexToken("to", "keyword", "\t" * numTabs)
-        # виклик фунції арифметичний вираз
+        postfixCode.append(("=", "assign_op"))
+        postfixCode.append(("r1", "ident"))
+        postfixCode.append(("0", "int"))
+        postfixCode.append(("!=", "rel_op"))
+        m2 = self.createLabel()
+        postfixCode.append((m2[0], m2[1]))
+        postfixCode.append(("JF", "jf"))
+        postfixCode.append((lex, tok))
+        postfixCode.append((lex, tok))
+        postfixCode.append(("r2", "ident"))
+        postfixCode.append(("+", "add_op"))
+        postfixCode.append(("=", "assign_op"))
+        postfixCode.append((m2[0], m2[1]))
+        postfixCode.append((":", "punct"))
+        self.setValueToLabel(m2)
+        postfixCode.append(("r1", "ident"))
+        postfixCode.append(("0", "int"))
+        postfixCode.append(("=", "assign_op"))
+        postfixCode.append((lex, tok))
+
         self.parseArithmExpression(numTabs)
-        # перевірка ключого слова do
         self.parseLexToken("do", "keyword", "\t" * numTabs)
-        # перевірка списку інструкцій
+        postfixCode.append(("-", "add_op"))
+        postfixCode.append(("r2", "ident"))
+        postfixCode.append(("*", "mult_op"))
+        postfixCode.append(("0", "int"))
+        postfixCode.append((">=", "rel_op"))
+        m3 = self.createLabel()
+        postfixCode.append((m3[0], m3[1]))
+        postfixCode.append(("JF", "jf"))
+
         self.parseStatemetList(numTabs)
-        # перевірка ключого слова end
         self.parseLexToken("end", "keyword", "\t" * numTabs)
+
+        postfixCode.append((m1[0], m1[1]))
+        postfixCode.append(("JUMP", "jump"))
+        postfixCode.append((m3[0], m3[1]))
+        postfixCode.append((":", "punct"))
+        self.setValueToLabel(m3)
+
+
+        # перевірка ключого слова to
+
+
+        # виклик фунції арифметичний вираз
+
+
         return True
+
+    # def parseFor(self, numTabs):
+    #     # print("\t" * numTabs + "parseFor():")
+    #     numTabs += 1
+    #     # перевірка ключого слова for
+    #     self.parseLexToken("for", "keyword", "\t" * numTabs)
+    #     # перевірка наявності ідентифікатора
+    #     numLine, lex, tok = self.getSymb()
+    #     if self.parseToken("ident", "\t" * numTabs):
+    #         postfixCode.append((lex, tok))
+    #
+    #     # перевірка оператора присвоювання
+    #     self.parseLexToken("=", "assign_op", "\t" * numTabs)
+    #     # виклик фунції арифметичний вираз
+    #     self.parseArithmExpression(numTabs)
+    #     postfixCode.append(("=", "assign_op"))
+    #
+    #     tableOfId["r1"] = (len(tableOfId)+1, "int", 0)
+    #     if "0" not in tableOfConst:
+    #         tableOfConst["0"] = (len(tableOfId)+1, "int", 0)
+    #     postfixCode.append(("r1", "ident"))
+    #     tableOfId["value_step"] = (len(tableOfId)+1, "int", 1)
+    #     postfixCode.append(("value_step", "ident"))
+    #     postfixCode.append(("=", "assign_op"))
+    #     m = self.createLabel()
+    #     postfixCode.append((m[0], m[1]))
+    #     postfixCode.append((":", "punct"))
+    #     self.setValueToLabel(m)
+    #
+    #     # перевірка ключого слова to
+    #     self.parseLexToken("to", "keyword", "\t" * numTabs)
+    #     postfixCode.append(("r1", "ident"))
+    #     # виклик фунції арифметичний вираз
+    #     self.parseArithmExpression(numTabs)
+    #     postfixCode.append((lex, tok))
+    #     postfixCode.append(("-", "add_op"))
+    #     postfixCode.append(("*", "mult_op"))
+    #     postfixCode.append(("0", "int"))
+    #     postfixCode.append((">", "rel_op"))
+    #     m2 = self.createLabel()
+    #     postfixCode.append((m2[0], m2[1]))
+    #     postfixCode.append(("JF", "jf"))
+    #     # перевірка ключого слова do
+    #     self.parseLexToken("do", "keyword", "\t" * numTabs)
+    #     # перевірка списку інструкцій
+    #     self.parseStatemetList(numTabs)
+    #     postfixCode.append((lex, tok))
+    #     postfixCode.append((lex, tok))
+    #     postfixCode.append(("r1", "ident"))
+    #     postfixCode.append(("+", "add_op"))
+    #     postfixCode.append(("=", "assign_op"))
+    #     postfixCode.append((m[0], m[1]))
+    #     postfixCode.append(("JUMP", "jump"))
+    #     # перевірка ключого слова end
+    #     self.parseLexToken("end", "keyword", "\t" * numTabs)
+    #     self.setValueToLabel(m2)
+    #     postfixCode.append((m2[0], m2[1]))
+    #     postfixCode.append((":", "punct"))
+    #
+    #
+    #     return True
+
+
 
     # def parseBoolPart(self, numTabs):
     #     print('\t' * numTabs + 'parseBooleanPart():')
@@ -612,7 +781,7 @@ class Parser:
                     postfixCode.append((lex, tok))
                 else:
                     break
-            return True
+        return True
 
             # while self.parseToken('rel_op', '\t' * numTabs):
             #     # виконувати булевий вираз
@@ -620,7 +789,7 @@ class Parser:
             # return True
         # повідомлення про відсутність логічного виразу
         # print('\t'*numTabs + '-Not a BoolExpression-')
-        return False
+        # return False
 
     def parseBoolPart(self, numTabs):
         global postfixCode
@@ -650,19 +819,15 @@ class Parser:
                     postfixCode.append((lex, tok))
                     return True
             else:
-                post = []
-                i = 0
-                while i < count:
-                    post.append(postfixCode[i])
-                    i += 1
-                postfixCode = post
+                # post = []
+                # i = 0
+                # while i < count:
+                #     post.append(postfixCode[i])
+                #     i += 1
+                # postfixCode = post
                 return False
         else:
-            post = []
-            i = 0
-            while i < count:
-                post[i]=postfixCode[i]
-            postfixCode = post
+
             return False
 
     def parseInp(self, numTabs):
@@ -725,8 +890,8 @@ class Parser:
         tableToPrint('Id')
         print('\nПочатковий код програми: \n{0}'.format(self.lex.getSourceCode()))
         print('\nКод програми у постфіксній формі (ПОЛІЗ): \n{0}'.format(postfixCode))
-        for lbl in tableOfMark:
-            print('postfixCode[{0}:{1}]={2}'.format(lbl, tableOfMark[lbl], postfixCode[tableOfMark[lbl]]))
+        # for lbl in tableOfLabel:
+        #     print('postfixCode[{0}:{1}]={2}'.format(lbl, tableOfLabel[lbl], postfixCode[tableOfLabel[lbl]]))
         return True
 
     def configToPrint(self,lex, numRow):
@@ -738,8 +903,8 @@ class Parser:
         print(stage.format(lex, numRow, str(tableOfSymb[numRow]), str(postfixCode)))
 
 
-# parser = Parser("test.my_lang")
+# parser = Parser("test3.my_lang")
 # parser.parseProgram()
-parser = Parser()
-parser.postfixTranslator("test3.my_lang")
+# parser = Parser()
+# parser.postfixTranslator("test3.my_lang")
 

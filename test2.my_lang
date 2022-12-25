@@ -1,4 +1,4 @@
 int a, b;
-bool ind;
+mark:
 read(a,b);
-ind = a ! b;
+if a > b goto mark;
