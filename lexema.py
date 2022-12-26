@@ -119,6 +119,8 @@ class Lexema:
         if self.state == 4 or self.state == 7 or token == 'boolval':
             indx1 = tableOfConst.get(self.lexeme)
             if indx1 is None:
+                if token == 'boolval':
+                    token = 'bool'
 
                 indx = len(tableOfConst) + 1
                 if self.state == 7:

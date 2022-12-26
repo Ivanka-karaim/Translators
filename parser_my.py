@@ -510,6 +510,30 @@ class Parser:
         # print("\t" * numTabs + "parseFor():")
         numTabs += 1
         # перевірка ключого слова for
+        tableOfId["value_step"] = (len(tableOfId) + 1, "int", 1)
+        count = self.numRow
+
+
+        self.parseLexToken("for", "keyword", "\t" * numTabs)
+        self.parseToken("ident", "\t"*numTabs)
+        self.parseLexToken("=", "assign_op", "\t" * numTabs)
+        self.parseArithmExpression(numTabs)
+        self.parseLexToken("to", "keyword", "\t" * numTabs)
+
+        self.parseArithmExpression(numTabs)
+        postfixCode.append(("<", "rel_op"))
+        mark = self.createLabel()
+        postfixCode.append((mark[0], mark[1]))
+        postfixCode.append(("JF", "jf"))
+
+        postfixCode.append(("value_step", "ident"))
+        tableOfConst["-1"] = (len(tableOfConst)+1, "int", -1)
+        postfixCode.append(("-1", "int"))
+        postfixCode.append(("=", "assign_op"))
+        self.setValueToLabel(mark)
+
+        self.numRow = count
+        ############################################
         self.parseLexToken("for", "keyword", "\t" * numTabs)
         # перевірка наявності ідентифікатора
         numLine, lex, tok = self.getSymb()
@@ -535,7 +559,7 @@ class Parser:
         tableOfId["r2"] = (len(tableOfId) + 1, "int", 0)
         self.setValueToLabel(m1)
         postfixCode.append(("r2", "ident"))
-        tableOfId["value_step"] = (len(tableOfId)+1, "int", 1)
+
         postfixCode.append(("value_step", "ident"))
 
         self.parseLexToken("to", "keyword", "\t" * numTabs)

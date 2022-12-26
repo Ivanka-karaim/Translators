@@ -27,10 +27,9 @@ def postfixProcessing():
     try:
         i = 0
         while i < maxNumb:
-
             lex,tok = postfixCode[i]
-            print(lex)
-            if tok in ('int','float','ident', 'boolval', 'mark'):
+            # print(lex)
+            if tok in ('int','real','ident', 'boolval', 'mark'):
                stack.push((lex,tok))
 
             elif tok == "neg":
@@ -46,7 +45,7 @@ def postfixProcessing():
 
                 value = doJumps(lex, tok, i)
                 i = value
-                print(i)
+                # print(i)
             else:
                 doIt(lex,tok)
 
@@ -59,6 +58,7 @@ def postfixProcessing():
         print('RunTime: Аварійне завершення програми з кодом {0}'.format(e))
     return True
 
+
 def doJumps(lex, tok, iterationNum):
     next = 0
     if tok == "jump":
@@ -70,9 +70,9 @@ def doJumps(lex, tok, iterationNum):
     elif tok == "jf":
         (lexLabel, tokLabel) = stack.pop()
         (lexExpr, tokExpr) = stack.pop()
-        print(lexExpr)
+        # print(lexExpr)
         value = lexExpr
-        print(value)
+        # print(value)
         if value == "true":
             next = tableOfLabel[lexLabel] - 1
         else:
@@ -81,12 +81,11 @@ def doJumps(lex, tok, iterationNum):
     return next
 
 
-
 def doInput():
     (lex, tok) = stack.pop()
     (index, type, v) = tableOfId[lex]
     if type == 'type_undef':
-        failRunTime('неініціалізована змінна', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
+        failRunTime('невстановлено тип змінної', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
     else:
         value = input()
         if type == "int":
@@ -102,9 +101,9 @@ def doInput():
 def doInvertValue():
     (lex, tok) = stack.pop()
     ( index, type, value) = tableOfConst.get(lex)
-    print(index)
+    # print(index)
     if type == 'type_undef':
-        failRunTime('неініціалізована змінна', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
+        failRunTime('невстановлено тип змінної', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
     elif value == 'val_undef':
         failRunTime('неініціалізована змінна', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
     elif isinstance(value, int) or isinstance(value, float) :
@@ -116,16 +115,18 @@ def doInvertValue():
     else:
         print("error")
 
+
 def doPrint():
     (lex, tok) = stack.pop()
     (index, type, value) = tableOfId[lex]
     if type == 'type_undef':
-        failRunTime('неініціалізована змінна', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
+        failRunTime('невстановлено тип змінної', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
     elif value == 'val_undef':
         failRunTime('неініціалізована змінна', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
     else:
         print(lex+" = "+str(value))
         return True
+
 
 def configToPrint(step,lex,tok,maxN):
     if step == 1:
@@ -149,9 +150,6 @@ def configToPrint(step,lex,tok,maxN):
     return True
 
 
-
-
-
 def doIt(lex,tok):
     global stack, postfixCode, tableOfId, tableOfConst, tableOfLabel
     if (lex,tok) == ('=', 'assign_op'):
@@ -160,6 +158,8 @@ def doIt(lex,tok):
 
         # зняти з вершини стека ідентифікатор (лівий операнд)
         (lexR,tokR) = stack.pop()
+        (indexR, typeR, valueR) = tableOfId[lexR]
+
 
         # виконати операцію:
         # оновлюємо запис у таблиці ідентифікаторів
@@ -168,11 +168,28 @@ def doIt(lex,tok):
         # тип - як у константи,
         # значення - як у константи)
         # print(tableOfConst[lexL])
-        print(lexL)
+        # print(lexL)
+
+        if typeR == 'type_undef':
+            failRunTime('невстановлено тип змінної', (lexR, tableOfId[lexR], (lexR, tokR), lex, (lexL, tokL)))
         if tokL == "ident":
-            tableOfId[lexR] = (tableOfId[lexR][0],  tableOfId[lexL][1], tableOfId[lexL][2])
+            (indexL, typeL, valueL) = tableOfId[lexL]
+            if (typeL, typeR) not in (('real', 'real'), ('int', 'int'), ('bool', 'boolval'), ('int', 'real')):
+                failRunTime('невідповідність типів', ((lexL, tokL), lex, (lexR, tokR)))
+            if typeL == 'type_undef':
+                failRunTime('невстановлено тип змінної', (lexL, tableOfId[lexL], (lexR, tokR), lex, (lexL, tokL)))
+            if valueL == 'val_undef':
+                failRunTime('неініціалізована змінна', (lexL, tableOfId[lexL], (lexR, tokR), lex, (lexL, tokL)))
+            tableOfId[lexR] = (tableOfId[lexR][0],  tableOfId[lexR][1], tableOfId[lexL][2])
+        elif tokL == "boolval":
+            if typeR != "bool":
+                failRunTime('невідповідність типів', ((lexL, tokL), lex, (lexR, tokR)))
+            tableOfId[lexR] = (tableOfId[lexR][0], "bool", lexL)
         else:
-            tableOfId[lexR] = (tableOfId[lexR][0], tableOfConst[lexL][1], tableOfConst[lexL][2])
+            (indexL, typeL, valueL) = tableOfConst[lexL]
+            if (typeL, typeR) not in (('real', 'real'), ('int', 'int'), ('bool', 'boolval'), ('int', 'real')):
+                failRunTime('невідповідність типів', ((lexL, tokL), lex, (lexR, tokR)))
+            tableOfId[lexR] = (tableOfId[lexR][0], tableOfId[lexR][1], tableOfConst[lexL][2])
     elif tok in ('add_op','mult_op', 'pow_op', 'rel_op'):
         # зняти з вершини стека запис (правий операнд)
         (lexR,tokR) = stack.pop()
@@ -188,6 +205,7 @@ def doIt(lex,tok):
 
     return True
 
+
 def failRunTime(str,tuple):
     if str == 'невідповідність типів':
         ((lexL,tokL),lex,(lexR,tokR))=tuple
@@ -195,12 +213,21 @@ def failRunTime(str,tuple):
         exit(1)
     elif str == 'неініціалізована змінна':
         (lx,rec,(lexL,tokL),lex,(lexR,tokR))=tuple
-        print('RunTime ERROR: \n\t Значення змінної {0}:{1} не визначене. Зустрылось у {2} {3} {4}'.format(lx,rec,(lexL,tokL),lex,(lexR,tokR)))
+        print('RunTime ERROR: \n\t Значення змінної {0}:{1} не визначене. Зустрілось у {2} {3} {4}'.format(lx,rec,(lexL,tokL),lex,(lexR,tokR)))
         exit(2)
+    elif str == 'невстановлено тип змінної':
+
+        (lx, rec, (lexL, tokL), lex, (lexR, tokR)) = tuple
+        print('RunTime ERROR: \n\t Тип змінної {0}:{1} не визначений. Зустрілось у {2} {3} {4}'.format(lx, rec,
+                                                                                                           (lexL, tokL),
+                                                                                                           lex, (
+                                                                                                           lexR, tokR)))
+        exit(3)
+
     elif str == 'ділення на нуль':
         ((lexL,tokL),lex,(lexR,tokR))=tuple
         print('RunTime ERROR: \n\t Ділення на нуль у {0} {1} {2}. '.format((lexL,tokL),lex,(lexR,tokR)))
-        exit(3)
+        exit(4)
 
 
 def processing_exception(ltL,lex,tok,ltR):
@@ -213,20 +240,27 @@ def processing_exception(ltL,lex,tok,ltR):
         # print(('===========',tokL , tableOfId[lexL][1]))
         # tokL = tableOfId[lexL][1]
         if tableOfId[lexL][1] == 'type_undef':
+            failRunTime('невстановлено тип змінної',(lexL,tableOfId[lexL],(lexL,tokL),lex,(lexR,tokR)))
+        if tableOfId[lexL][2] == 'val_undef':
             failRunTime('неініціалізована змінна',(lexL,tableOfId[lexL],(lexL,tokL),lex,(lexR,tokR)))
         else:
             valL,tokL = (tableOfId[lexL][2],tableOfId[lexL][1])
     else:
         valL = tableOfConst[lexL][2]
+        tokL = tableOfConst[lexL][1]
+
     if tokR == 'ident':
         # print(('===========',tokL , tableOfId[lexL][1]))
         # tokL = tableOfId[lexL][1]
         if tableOfId[lexR][1] == 'type_undef':
+            failRunTime('невстановлено тип змінної',(lexR,tableOfId[lexR],(lexL,tokL),lex,(lexR,tokR)))
+        if tableOfId[lexR][2] == 'val_undef':
             failRunTime('неініціалізована змінна',(lexR,tableOfId[lexR],(lexL,tokL),lex,(lexR,tokR)))
         else:
             valR,tokR = (tableOfId[lexR][2],tableOfId[lexR][1])
     else:
         valR = tableOfConst[lexR][2]
+        tokR = tableOfConst[lexR][1]
     # if :
         # print(('lexL',lexL,tableOfConst))
         # valL = tableOfConst[lexL][2]
@@ -240,17 +274,22 @@ def processing_exception(ltL,lex,tok,ltR):
 def getBoolValue(vtL,lex,vtR):
     valL, lexL, tokL = vtL
     valR, lexR, tokR = vtR
-    print(lex)
+    # print(lex)
+    # print(lexL)
+    # print(valL)
+    # print(lexR)
+    # print(valR)
     # print(tokR)
-    if (tokL, tokR) in (('int', 'boolval'), ('boolval', 'int'), ('real', 'boolval'), ('boolval', 'real')):
+
+    if (tokL, tokR) in (('int', 'bool'), ('bool', 'int'), ('real', 'bool'), ('bool', 'real')):
         failRunTime('невідповідність типів', ((lexL, tokL), lex, (lexR, tokR)))
     elif lex == '>':
         value = valL > valR
     elif lex == '<':
         value = valL < valR
     elif lex == '==':
-        print(valL)
-        print(valR)
+        # print(valL)
+        # print(valR)
         value = valL == valR
     elif lex == '!=':
         value = valL != valR
@@ -261,7 +300,7 @@ def getBoolValue(vtL,lex,vtR):
     else:
         pass
     stack.push((str(value).lower(), "boolval"))
-    toTableOfConst(value, tokL)
+    toTableOfConst(str(value).lower(),"boolval")
 
 
 def getValue(vtL,lex,vtR):
@@ -269,9 +308,11 @@ def getValue(vtL,lex,vtR):
 
     valL,lexL,tokL = vtL
     valR,lexR,tokR = vtR
+    # print(valL)
+    # print(valR)
 
-    if (tokL,tokR) in (('int','real'),('real','int')):
-            failRunTime('невідповідність типів',((lexL,tokL),lex,(lexR,tokR)))
+    if tokL == 'bool' or tokR == 'bool':
+        failRunTime('невідповідність типів',((lexL,tokL),lex,(lexR,tokR)))
     elif lex == '+':
         value = valL + valR
     elif lex == '-':
@@ -280,18 +321,21 @@ def getValue(vtL,lex,vtR):
         value = valL * valR
     elif lex == '/' and valR ==0:
         failRunTime('ділення на нуль',((lexL,tokL),lex,(lexR,tokR)))
-    elif lex == '/' and tokL=='real':
-        value = valL / valR
-    elif lex == '/' and tokL=='int':
+    elif lex == '/':
+        value = valL/valR
+    elif lex == 'div':
         value = int(valL / valR)
     elif lex == '^':
         value = pow(valL, valR)
     else:
         pass
+    if tokL != tokR:
+        tokL = 'real'
     stack.push((str(value),tokL))
     toTableOfConst(value,tokL)
 
         # tableOfId[lexR] = (tableOfId[lexR][0],  tableOfConst[lexL][1], tableOfConst[lexL][2])
+
 
 def toTableOfConst(val,tok):
     lexeme = str(val)
@@ -301,4 +345,4 @@ def toTableOfConst(val,tok):
         tableOfConst[lexeme]=(indx,tok,val)
 
 
-postfixInterpreter("test2.my_lang")
+postfixInterpreter("test.my_lang")

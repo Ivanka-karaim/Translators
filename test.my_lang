@@ -1,8 +1,9 @@
 int count, i, total;
-real ind, sum ;
+real ind, sum;
 bool equal;
 
 read(ind);
+read(count);
 read(total);
 sum=0;
 mark:
