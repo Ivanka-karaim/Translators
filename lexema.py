@@ -22,7 +22,7 @@ Ferror = {101, 102, 103}  # обробка помилок
 
 # Таблиця лексем мови
 tableOfLanguageTokens = {'end': 'keyword', 'int': 'keyword', 'real': 'keyword', 'bool': 'keyword',
-                         'true': 'boolval', 'false': 'boolval', 'read': 'keyword', 'write': 'keyword', 'for': 'keyword',
+                         'true': 'bool', 'false': 'bool', 'read': 'keyword', 'write': 'keyword', 'for': 'keyword',
                          'to': 'keyword', 'do': 'keyword', 'if': 'keyword', 'goto': 'keyword',
                          '=': 'assign_op', '.': 'punct', ':': 'punct', ';': 'punct', ',': 'punct',
                          ' ': 'ws', '\t': 'ws', '\n': 'nl',
@@ -116,11 +116,9 @@ class Lexema:
             if indx1 is None:
                 indx = len(tableOfId) + 1
                 tableOfId[self.lexeme] = (indx,'type_undef','val_undef')
-        if self.state == 4 or self.state == 7 or token == 'boolval':
+        if self.state == 4 or self.state == 7 or token == 'bool':
             indx1 = tableOfConst.get(self.lexeme)
             if indx1 is None:
-                if token == 'boolval':
-                    token = 'bool'
 
                 indx = len(tableOfConst) + 1
                 if self.state == 7:
@@ -153,7 +151,7 @@ class Lexema:
     def lex(self):
         global FSuccess
         try:
-            print(self.lenCode)
+            # print(self.lenCode)
             while self.numChar < self.lenCode:
                 self.char = self.nextChar()  # прочитати наступний символ
                 self.state = self.nextState(self.classOfChar())  # обчислити наступний стан

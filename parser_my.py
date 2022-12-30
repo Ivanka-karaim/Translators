@@ -33,7 +33,7 @@ class Parser:
         # чи був успішним лексичний розбір
         if (True, 'Lexer') == FSuccess:
             FSuccess = self.parseProgram()
-            self.serv()
+            # self.serv()
             return FSuccess
 
     def getSymb(self):
@@ -429,7 +429,7 @@ class Parser:
             if toView: self.configToPrint(lex,self.numRow)
             self.numRow += 1
             # print("\t" * numTabs + 'в рядку {0} - {1}'.format(numLine, (lex, token)))
-        elif token == 'boolval':
+        elif token == 'bool':
             self.numRow -= 1
             if self.getSymb()[2] == 'rel_op':
                 postfixCode.append((lex, token))  # Трансляція
@@ -447,7 +447,7 @@ class Parser:
             self.parseLexToken(")", "brackets_op", "\t" * numTabs)
         else:
             self.failParse("невідповідність у Expression.Factor",
-                           (numLine, lex, token, 'int | real | boolval | ident | ('))
+                           (numLine, lex, token, 'int | real | bool | ident | ('))
         return True
 
     def parseExpression(self, numTabs):
@@ -823,7 +823,7 @@ class Parser:
         numLine, lex, tok = self.getSymb()
         # перевірка чи є цей елемент boolval
         count = len(postfixCode)
-        if lex in ('true', 'false') and tok == 'boolval':
+        if lex in ('true', 'false') and tok == 'bool':
             # self.parseLexToken(lex, 'boolval', '\t' * numTabs)
             postfixCode.append((lex, tok))
             self.numRow += 1

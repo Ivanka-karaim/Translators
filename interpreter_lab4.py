@@ -29,7 +29,7 @@ def postfixProcessing():
         while i < maxNumb:
             lex,tok = postfixCode[i]
             # print(lex)
-            if tok in ('int','real','ident', 'boolval', 'mark'):
+            if tok in ('int','real','ident', 'bool', 'mark'):
                stack.push((lex,tok))
 
             elif tok == "neg":
@@ -100,7 +100,11 @@ def doInput():
 
 def doInvertValue():
     (lex, tok) = stack.pop()
-    ( index, type, value) = tableOfConst.get(lex)
+    if tok == "ident":
+        ( index, type, value) = tableOfId.get(lex)
+
+    else:
+        (index, type, value) = tableOfConst.get(lex)
     # print(index)
     if type == 'type_undef':
         failRunTime('невстановлено тип змінної', (lex, tableOfId[lex], (lex, tok), lex, (lex, tok)))
@@ -113,7 +117,8 @@ def doInvertValue():
         stack.push((str(value), type))
         return True
     else:
-        print("error")
+        failRunTime('невідповідність типів в унарному мінусі', ( "-", (lex, tok)))
+
 
 
 def doPrint():
@@ -174,20 +179,20 @@ def doIt(lex,tok):
             failRunTime('невстановлено тип змінної', (lexR, tableOfId[lexR], (lexR, tokR), lex, (lexL, tokL)))
         if tokL == "ident":
             (indexL, typeL, valueL) = tableOfId[lexL]
-            if (typeL, typeR) not in (('real', 'real'), ('int', 'int'), ('bool', 'boolval'), ('int', 'real')):
+            if (typeL, typeR) not in (('real', 'real'), ('int', 'int'), ('bool', 'bool'), ('int', 'real')):
                 failRunTime('невідповідність типів', ((lexL, tokL), lex, (lexR, tokR)))
             if typeL == 'type_undef':
                 failRunTime('невстановлено тип змінної', (lexL, tableOfId[lexL], (lexR, tokR), lex, (lexL, tokL)))
             if valueL == 'val_undef':
                 failRunTime('неініціалізована змінна', (lexL, tableOfId[lexL], (lexR, tokR), lex, (lexL, tokL)))
             tableOfId[lexR] = (tableOfId[lexR][0],  tableOfId[lexR][1], tableOfId[lexL][2])
-        elif tokL == "boolval":
+        elif tokL == "bool":
             if typeR != "bool":
                 failRunTime('невідповідність типів', ((lexL, tokL), lex, (lexR, tokR)))
             tableOfId[lexR] = (tableOfId[lexR][0], "bool", lexL)
         else:
             (indexL, typeL, valueL) = tableOfConst[lexL]
-            if (typeL, typeR) not in (('real', 'real'), ('int', 'int'), ('bool', 'boolval'), ('int', 'real')):
+            if (typeL, typeR) not in (('real', 'real'), ('int', 'int'), ('bool', 'bool'), ('int', 'real')):
                 failRunTime('невідповідність типів', ((lexL, tokL), lex, (lexR, tokR)))
             tableOfId[lexR] = (tableOfId[lexR][0], tableOfId[lexR][1], tableOfConst[lexL][2])
     elif tok in ('add_op','mult_op', 'pow_op', 'rel_op'):
@@ -228,6 +233,10 @@ def failRunTime(str,tuple):
         ((lexL,tokL),lex,(lexR,tokR))=tuple
         print('RunTime ERROR: \n\t Ділення на нуль у {0} {1} {2}. '.format((lexL,tokL),lex,(lexR,tokR)))
         exit(4)
+    elif str == 'невідповідність типів в унарному мінусі':
+        (lex, (lexR, tokR)) = tuple
+        print('RunTime ERROR: \n\t Неможливо використати унарний мінус дл булевої змінни {0} {1} . '.format( lex, (lexR, tokR)))
+        exit(5)
 
 
 def processing_exception(ltL,lex,tok,ltR):
@@ -299,8 +308,8 @@ def getBoolValue(vtL,lex,vtR):
         value = valL <= valR
     else:
         pass
-    stack.push((str(value).lower(), "boolval"))
-    toTableOfConst(str(value).lower(),"boolval")
+    stack.push((str(value).lower(), "bool"))
+    toTableOfConst(str(value).lower(),"bool")
 
 
 def getValue(vtL,lex,vtR):
@@ -345,4 +354,4 @@ def toTableOfConst(val,tok):
         tableOfConst[lexeme]=(indx,tok,val)
 
 
-postfixInterpreter("test.my_lang")
+postfixInterpreter("test3.my_lang")

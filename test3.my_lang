@@ -1,15 +1,10 @@
-bool x, y;
-int a, b;
-real t, i, count;
-a = 3;
-b = a;
-t  = 1.2;
-i = t + a;
-y = false;
-x = 3 > 2;
-write(i);
-count = 3;
-count = count/ 2;
-count = a;
+
+int a;
+bool x;
+x = true;
+
+a = -5;
+
+
 
 
